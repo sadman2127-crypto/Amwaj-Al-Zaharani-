@@ -34,8 +34,25 @@ onAuthStateChanged(auth,async user=>{
  $("login").classList.toggle("hidden",!!user);$("app").classList.toggle("hidden",!user);
  if(!user)return;
  $("who").textContent=user.email||"Signed in";
- try{const snap=await (await import("https://www.gstatic.com/firebasejs/10.14.1/firebase-firestore.js")).getDoc(doc(db,"settings","admin"));admin=snap.exists()&&snap.data().uid===user.uid;}catch(e){admin=false;}
- $("role").textContent=admin?"Administrator / Admin":"View only / عرض فقط";
+ try {
+ const fs = await import("https://www.gstatic.com/firebasejs/10.14.1/firebase-firestore.js");
+ const snap = await fs.getDoc(doc(db,"settings","admin"));
+
+ const savedUid = snap.exists()
+   ? String(snap.data().uid || "").trim()
+   : "";
+
+ admin = savedUid === String(user.uid).trim();
+
+ $("role").textContent = admin
+   ? "Administrator / Admin"
+   : !snap.exists()
+     ? "Admin document not found"
+     : "UID mismatch";
+} catch(e) {
+ admin = false;
+ $("role").textContent = "Error: " + (e.code || e.message);
+ }
  $("editor").classList.add("hidden");
  unsub=onSnapshot(doc(db,"hotel","rooms"),s=>{roomsData=s.exists()?s.data():{};render();},e=>{$("saveMsg").textContent=e.message;});
 });
